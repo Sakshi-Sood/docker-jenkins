@@ -1,20 +1,32 @@
 pipeline {
     agent any
+
     environment {
-        DOCKER_IMAGE = "sakshisood004/docker-jenkins"
+        IMAGE_NAME = "sakshisood004/docker-jenkins"
     }
+
     stages {
-        stage ("Build Docker image") {
+
+        stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                sh 'docker build -t $IMAGE_NAME:latest .'
             }
         }
-        stage ("Push image") {
+
+        stage('Push Docker Image') {
             steps {
-                // In a real scenario, use withCredentials to login
-                // sh "docker login -u $USER -p $PASS"
-                sh "docker push ${DOCKER_IMAGE}"
-                echo "Docker image pushed successfully."
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $IMAGE_NAME:latest
+                    '''
+                }
             }
         }
     }
